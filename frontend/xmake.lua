@@ -1,5 +1,5 @@
 target("frontend")
-    set_kind("object")
+    set_kind("phony")
     set_group("all")
 
     add_extrafiles("resources/**")

@@ -27,6 +27,8 @@ SOFTWARE.
 
 #pragma once
 
+#include <variant>
+
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpResponse.h>
 
@@ -41,10 +43,17 @@ private:
 		std::string document_root = drogon::app().getDocumentRoot();
 		return (std::filesystem::path(std::move(document_root)).parent_path() / "Inertia.html").string();
 	}
+	class Lazy;
 public:
+	using StringOrLazy = std::variant<std::string, std::function<std::string()>, Lazy>;
+
+	static Lazy lazy(std::function<std::string()> func) {
+		return Lazy(func);
+	}
+
 	static drogon::HttpResponsePtr newInertiaResponse(
 		const drogon::HttpRequestPtr& req,
-		std::unordered_map<std::string, std::function<std::string()>>& prop_functions,
+		std::unordered_map<std::string, StringOrLazy>& prop_functions,
 		const std::string& component,
 		const std::string& url
 	) {
@@ -58,10 +67,10 @@ public:
 			builder["indentation"] = "";
 
 			const std::string output = Json::writeString(std::move(builder), std::move(json_result));
-		
+
 			inja::json inja_json;
 			inja_json["data-page"] = std::move(output);
-		
+
 			inja::Environment env;
 			std::string result = env.render_file(Inertia::getInertiaHtmlPath(), std::move(inja_json));
 			auto response = drogon::HttpResponse::newHttpResponse();
@@ -103,6 +112,16 @@ public:
 		}
 	}
 private:
+	class Lazy {
+	public:
+		Lazy(std::function<std::string()> func) : _func(func) {}
+		std::string operator()() const {
+			return _func();
+		}
+	private:
+		std::function<std::string()> _func;
+	};
+
 	static std::string getAssetVersion() {
 		std::string src_str = drogon::app().getCustomConfig()["Version"].asString();
 		std::vector<unsigned char> hash(picosha2::k_digest_size);
@@ -111,8 +130,18 @@ private:
 		return hex_str;
 	}
 
+	/**
+	* @brief Get the Json Result object
+	 * 
+	 * @param prop_functions Map of prop name and prop value
+	 * @param component Name of the component
+	 * @param url URL of the page
+	 * @param props Partial component props
+	 * @return Json::Value 
+	 *
+	*/
 	static Json::Value getJsonResult(
-		std::unordered_map<std::string, std::function<std::string()>> prop_functions,
+		std::unordered_map<std::string, StringOrLazy> prop_functions,
 		const std::string& component,
 		const std::string& url,
 		std::optional<std::vector<std::string>> props = std::nullopt
@@ -124,16 +153,35 @@ private:
 		json["version"] = asset_version;
 		if (props.has_value()) {
 			for (auto& prop : props.value()) {
-				const auto prop_function_pair = prop_functions.find(prop);
-				if (prop_function_pair == prop_functions.end()) {
+				const auto prop_pair = prop_functions.find(prop);
+				if (prop_pair == prop_functions.end()) {
 					continue;
 				}
-				json["props"][prop_function_pair->first] = std::any_cast<std::string>(prop_function_pair->second());
+				const StringOrLazy& string_or_lazy = prop_pair->second;
+				if (std::holds_alternative<std::string>(string_or_lazy)) {
+					json["props"][prop_pair->first] = std::get<std::string>(string_or_lazy);
+					continue;
+				}
+				if (std::holds_alternative<std::function<std::string()>>(string_or_lazy)) {
+					json["props"][prop_pair->first] = std::get<std::function<std::string()>>(string_or_lazy)();
+					continue;
+				}
+				if (std::holds_alternative<Lazy>(string_or_lazy)) {
+					json["props"][prop_pair->first] = std::get<Lazy>(string_or_lazy)();
+					continue;
+				}
 			}
 		}
 		else {
-			for (auto& [prop_function_name, prop_function] : prop_functions) {
-				json["props"][prop_function_name] = std::any_cast<std::string>(prop_function());
+			for (auto& [prop_name, string_or_lazy] : prop_functions) {
+				if (std::holds_alternative<std::string>(string_or_lazy)) {
+					json["props"][prop_name] = std::get<std::string>(string_or_lazy);
+					continue;
+				}
+				if (std::holds_alternative<std::function<std::string()>>(string_or_lazy)) {
+					json["props"][prop_name] = std::get<std::function<std::string()>>(string_or_lazy)();
+					continue;
+				}
 			}
 		}
 		return json;

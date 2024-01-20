@@ -12,4 +12,5 @@ includes("backend/xmake.lua", "frontend/xmake.lua")
 
 target("fullstack")
     set_kind("phony")
+    set_default(true)
     add_deps("backend", "frontend")
