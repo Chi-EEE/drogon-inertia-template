@@ -1,11 +1,12 @@
 target("frontend")
-    set_kind("phony")
+    set_kind("object")
     set_group("all")
 
     add_extrafiles("resources/**")
     add_extrafiles("package.json")
     add_extrafiles("webpack.config.js")
 
+    -- Using this may cause problems with xmake rules
     on_build(function (target)
         local frontend_dir = path.join(path.directory(os.scriptdir()), "frontend")
         local args = {"--prefix", frontend_dir}
