@@ -1,4 +1,4 @@
-local outputdir = path.join(path.join(os.scriptdir(), "build"))
+local outputdir = path.join(os.scriptdir(), "build")
 set_config("outputdir", outputdir)
 
 includes("backend/xmake.lua", "frontend/xmake.lua")
