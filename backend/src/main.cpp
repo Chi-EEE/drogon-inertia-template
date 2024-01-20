@@ -19,6 +19,7 @@ int wmain(int argc, wchar_t** argv)
         [](const HttpRequestPtr &req,
            std::function<void(const HttpResponsePtr &)> &&callback) {
             std::unordered_map<std::string, std::function<std::string()>> props;
+            props.insert({"name", []() { return "[Your Name Here]"; }});
             callback(Inertia::newInertiaResponse(req, props, "App", "http://127.0.0.1:8848"));
         },
         {Get});

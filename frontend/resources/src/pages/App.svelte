@@ -1,13 +1,13 @@
 <script lang="ts">
-	import Title from '@/shared/Title.svelte';
+	import Span from '@/shared/Span.svelte';
 	export let name: string;
 </script>
 
-<Title {name} />
 
 <main>
 	<h1>Hello {name}!</h1>
 	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
+	<Span {name} />
 </main>
 
 <style>
