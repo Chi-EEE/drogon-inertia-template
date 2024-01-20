@@ -2,6 +2,12 @@
 
 ## Getting Started
 
+### Technologies
+
+* [Drogon](https://drogon.org/)
+* [InertiaJS](https://inertiajs.com/)
+* [Svelte](https://svelte.dev/)
+
 ### Dependencies
 
 * [XMake](https://xmake.io/#/guide/installation) - Build Tool for this project
