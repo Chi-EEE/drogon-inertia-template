@@ -6,7 +6,7 @@
 
 using namespace drogon;
 
-int wmain(int argc, wchar_t** argv)
+int main(int argc, char* argv[])
 {
     std::filesystem::path exe_dir = std::filesystem::weakly_canonical(std::filesystem::path(argv[0])).parent_path();
   	std::string config_json_path = exe_dir.string() + "/settings/config.json";
